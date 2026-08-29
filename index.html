@@ -200,111 +200,115 @@
     </main>
 
     <script>
-        function callCenterApp() {
-            return {
-                seccion: 'captura',
-                enLlamada: false,
-                segundos: 0,
-                timer: null,
-                tiempoLlamada: '00:00',
-                
-                form: {
-                    solicitante: '',
-                    telefono: '',
-                    parentesco: '',
-                    fallecido: '',
-                    ubicacion: '',
-                    tipoServicio: 'Inmediato - Inhumación',
-                    tienePlan: 'No',
-                    prioridad: 'Urgente (Recolección Inmediata)',
-                    notas: ''
-                },
+       function callCenterApp() {
+    return {
+        seccion: 'captura',
+        enLlamada: false,
+        segundos: 0,
+        timer: null,
+        tiempoLlamada: '00:00',
+        
+        form: {
+            solicitante: '',
+            telefono: '',
+            parentesco: '',
+            fallecido: '',
+            ubicacion: '',
+            tipoServicio: 'Inmediato - Inhumación',
+            tienePlan: 'No',
+            prioridad: 'Urgente (Recolección Inmediata)',
+            notas: ''
+        },
 
-                servicios: [
-                    {
-                        folio: 'MS-2026-001',
-                        solicitante: 'María Elena Ramos',
-                        telefono: '653-123-4567',
-                        fallecido: 'Roberto Ramos Castro',
-                        ubicacion: 'Hospital General - San Luis RC',
-                        tipoServicio: 'Inmediato - Inhumación',
-                        prioridad: 'Urgente (Recolección Inmediata)'
-                    }
-                ],
-
-                toggleLlamada() {
-                    this.enLlamada = !this.enLlamada;
-                    if (this.enLlamada) {
-                        this.segundos = 0;
-                        this.timer = setInterval(() => {
-                            this.segundos++;
-                            let mins = Math.floor(this.segundos / 60).toString().padStart(2, '0');
-                            let secs = (this.segundos % 60).toString().padStart(2, '0');
-                            this.tiempoLlamada = `${mins}:${secs}`;
-                        }, 1000);
-                    } else {
-                        clearInterval(this.timer);
-                    }
-                },
-
-                async guardarServicio() {
-                    let nuevoFolio = `MS-2026-${(this.servicios.length + 1).toString().padStart(3, '0')}`;
-                    
-                    const payload = {
-                        "FOLIO": nuevoFolio,
-                        "SOLICITANTE": this.form.solicitante,
-                        "TELÉFONO": this.form.telefono,
-                        "FALLECIDO": this.form.fallecido,
-                        "UBICACIÓN": this.form.ubicacion,
-                        "SERVICIO": this.form.tipoServicio,
-                        "PRIORIDAD": this.form.prioridad
-                    };
-
-                    this.servicios.unshift({
-                        folio: nuevoFolio,
-                        solicitante: this.form.solicitante,
-                        telefono: this.form.telefono,
-                        fallecido: this.form.fallecido,
-                        ubicacion: this.form.ubicacion,
-                        tipoServicio: this.form.tipoServicio,
-                        prioridad: this.form.prioridad
-                    });
-
-                    const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbz8oqhTS5Z42G70bFxDJMFOcr_evrDp8ilsYrBg9iOC7fItxHPxjZTSIpnLGqWvr2ERMg/exec';
-
-                    try {
-                        await fetch(WEBHOOK_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        
-                        alert(`✅ Folio ${nuevoFolio} registrado. Se guardó en Google Sheets y se envió la alerta a Telegram.`);
-                    } catch (error) {
-                        console.error('Error enviando datos:', error);
-                        alert(`⚠️ El folio ${nuevoFolio} se registró en pantalla, pero hubo un detalle al conectar con el servidor.`);
-                    }
-
-                    this.limpiarFormulario();
-                    this.seccion = 'historial';
-                },
-
-                limpiarFormulario() {
-                    this.form = {
-                        solicitante: '',
-                        telefono: '',
-                        parentesco: '',
-                        fallecido: '',
-                        ubicacion: '',
-                        tipoServicio: 'Inmediato - Inhumación',
-                        tienePlan: 'No',
-                        prioridad: 'Urgente (Recolección Inmediata)',
-                        notas: ''
-                    };
-                }
+        // CAMBIO 1: Carga los folios guardados previamente en el navegador
+        servicios: JSON.parse(localStorage.getItem('folio_servicios')) || [
+            {
+                folio: 'MS-2026-001',
+                solicitante: 'María Elena Ramos',
+                telefono: '653-123-4567',
+                fallecido: 'Roberto Ramos Castro',
+                ubicacion: 'Hospital General - San Luis RC',
+                tipoServicio: 'Inmediato - Inhumación',
+                prioridad: 'Urgente (Recolección Inmediata)'
             }
+        ],
+
+        toggleLlamada() {
+            this.enLlamada = !this.enLlamada;
+            if (this.enLlamada) {
+                this.segundos = 0;
+                this.timer = setInterval(() => {
+                    this.segundos++;
+                    let mins = Math.floor(this.segundos / 60).toString().padStart(2, '0');
+                    let secs = (this.segundos % 60).toString().padStart(2, '0');
+                    this.tiempoLlamada = `${mins}:${secs}`;
+                }, 1000);
+            } else {
+                clearInterval(this.timer);
+            }
+        },
+
+        async guardarServicio() {
+            let nuevoFolio = `MS-2026-${(this.servicios.length + 1).toString().padStart(3, '0')}`;
+            
+            const payload = {
+                "FOLIO": nuevoFolio,
+                "SOLICITANTE": this.form.solicitante,
+                "TELÉFONO": this.form.telefono,
+                "FALLECIDO": this.form.fallecido,
+                "UBICACIÓN": this.form.ubicacion,
+                "SERVICIO": this.form.tipoServicio,
+                "PRIORIDAD": this.form.prioridad
+            };
+
+            this.servicios.unshift({
+                folio: nuevoFolio,
+                solicitante: this.form.solicitante,
+                telefono: this.form.telefono,
+                fallecido: this.form.fallecido,
+                ubicacion: this.form.ubicacion,
+                tipoServicio: this.form.tipoServicio,
+                prioridad: this.form.prioridad
+            });
+
+            // CAMBIO 2: Guarda el arreglo actualizado en el almacenamiento local del navegador
+            localStorage.setItem('folio_servicios', JSON.stringify(this.servicios));
+
+            const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbz8oqhTS5Z42G70bFxDJMFOcr_evrDp8ilsYrBg9iOC7fItxHPxjZTSIpnLGqWvr2ERMg/exec';
+
+            try {
+                await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                alert(`✅ Folio ${nuevoFolio} registrado. Se guardó en Google Sheets y se envió la alerta a Telegram.`);
+            } catch (error) {
+                console.error('Error enviando datos:', error);
+                alert(`⚠️ El folio ${nuevoFolio} se registró en pantalla, pero hubo un detalle al conectar con el servidor.`);
+            }
+
+            this.limpiarFormulario();
+            this.seccion = 'historial';
+        },
+
+        limpiarFormulario() {
+            this.form = {
+                solicitante: '',
+                telefono: '',
+                parentesco: '',
+                fallecido: '',
+                ubicacion: '',
+                tipoServicio: 'Inmediato - Inhumación',
+                tienePlan: 'No',
+                prioridad: 'Urgente (Recolección Inmediata)',
+                notas: ''
+            };
         }
+    }
+}
     </script>
 </body>
 </html>

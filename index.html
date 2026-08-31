@@ -269,17 +269,30 @@
                     notas: ''
                 },
 
-                servicios: [
-                    {
-                        folio: 'MS-2026-001',
-                        solicitante: 'María Elena Ramos',
-                        telefono: '653-123-4567',
-                        fallecido: 'Roberto Ramos Castro',
-                        ubicacion: 'Hospital General - San Luis RC',
-                        tipoServicio: 'Inmediato - Inhumación',
-                        prioridad: 'Urgente (Recolección Inmediata)'
+                servicios: [],
+
+                init() {
+                    const guardado = localStorage.getItem('ms_folios');
+                    if (guardado) {
+                        try {
+                            this.servicios = JSON.parse(guardado);
+                        } catch (e) {
+                            this.servicios = [];
+                        }
+                    } else {
+                        this.servicios = [
+                            {
+                                folio: 'MS-2026-001',
+                                solicitante: 'María Elena Ramos',
+                                telefono: '653-123-4567',
+                                fallecido: 'Roberto Ramos Castro',
+                                ubicacion: 'Hospital General - San Luis RC',
+                                tipoServicio: 'Inmediato - Inhumación',
+                                prioridad: 'Urgente (Recolección Inmediata)'
+                            }
+                        ];
                     }
-                ],
+                },
 
                 toggleLlamada() {
                     this.enLlamada = !this.enLlamada;
@@ -297,7 +310,12 @@
                 },
 
                 async guardarServicio() {
-                    let nuevoFolio = `MS-2026-${(this.servicios.length + 1).toString().padStart(3, '0')}`;
+                    let maxNum = 0;
+                    this.servicios.forEach(s => {
+                        const n = parseInt(s.folio.split('-').pop(), 10);
+                        if (!isNaN(n) && n > maxNum) maxNum = n;
+                    });
+                    let nuevoFolio = `MS-2026-${(maxNum + 1).toString().padStart(3, '0')}`;
 
                     const payload = {
                         "FOLIO": nuevoFolio,
@@ -318,6 +336,8 @@
                         tipoServicio: this.form.tipoServicio,
                         prioridad: this.form.prioridad
                     });
+
+                    localStorage.setItem('ms_folios', JSON.stringify(this.servicios));
 
                     const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbz8oqhTS5Z42G70bFxDJMFOcr_evrDp8ilsYrBg9iOC7fItxHPxjZTSIpnLGqWvr2ERMg/exec';
 

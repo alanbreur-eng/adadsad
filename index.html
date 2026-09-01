@@ -310,12 +310,15 @@
                 },
 
                 async guardarServicio() {
-                    let maxNum = 0;
-                    this.servicios.forEach(s => {
-                        const n = parseInt(s.folio.split('-').pop(), 10);
-                        if (!isNaN(n) && n > maxNum) maxNum = n;
-                    });
-                    let nuevoFolio = `MS-2026-${(maxNum + 1).toString().padStart(3, '0')}`;
+                    const ahora = new Date();
+                    const yy = ahora.getFullYear();
+                    const mm = (ahora.getMonth() + 1).toString().padStart(2, '0');
+                    const dd = ahora.getDate().toString().padStart(2, '0');
+                    const hh = ahora.getHours().toString().padStart(2, '0');
+                    const mi = ahora.getMinutes().toString().padStart(2, '0');
+                    const ss = ahora.getSeconds().toString().padStart(2, '0');
+                    const aleatorio = Math.random().toString(36).substring(2, 5).toUpperCase();
+                    let nuevoFolio = `MS-${yy}${mm}${dd}-${hh}${mi}${ss}-${aleatorio}`;
 
                     const payload = {
                         "FOLIO": nuevoFolio,

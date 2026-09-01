@@ -194,8 +194,15 @@
                 </div>
 
                 <div class="col-span-12 flex justify-end">
-                    <button type="submit" class="gold-btn text-slate-950 font-bold px-8 py-3 rounded-lg transition shadow-lg flex items-center gap-2">
-                        💾 Registrar Folio y Notificar Unidad
+                    <button type="submit" :disabled="enviando" :class="enviando ? 'opacity-60 cursor-not-allowed' : ''" class="gold-btn text-slate-950 font-bold px-8 py-3 rounded-lg transition shadow-lg flex items-center gap-2">
+                        <span x-show="!enviando">💾 Registrar Folio y Notificar Unidad</span>
+                        <span x-show="enviando" class="flex items-center gap-2">
+                            <svg class="animate-spin h-4 w-4 text-slate-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            Enviando...
+                        </span>
                     </button>
                 </div>
             </form>
@@ -256,6 +263,7 @@
                 segundos: 0,
                 timer: null,
                 tiempoLlamada: '00:00',
+                enviando: false,
 
                 form: {
                     solicitante: '',
@@ -310,6 +318,9 @@
                 },
 
                 async guardarServicio() {
+                    if (this.enviando) return;
+                    this.enviando = true;
+
                     const ahora = new Date();
                     const yy = ahora.getFullYear();
                     const mm = (ahora.getMonth() + 1).toString().padStart(2, '0');
@@ -356,6 +367,8 @@
                     } catch (error) {
                         console.error('Error enviando datos:', error);
                         alert(`⚠️ El folio ${nuevoFolio} se registró en pantalla, pero hubo un detalle al conectar con el servidor.`);
+                    } finally {
+                        this.enviando = false;
                     }
 
                     this.limpiarFormulario();

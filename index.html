@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monte Sinaí - Call Center de Atención Inmediata</title>
+    <title>Monte Sinaí - Call Center y Gestión de Servicios</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,262 +38,330 @@
         .gold-btn:hover { background: linear-gradient(135deg, #f0d9a4 0%, #d4b578 45%, #ab8a4e 100%); }
     </style>
 </head>
-<body class="bg-radial text-slate-100 min-h-screen flex flex-col md:flex-row overflow-x-hidden" x-data="callCenterApp()">
+<body class="bg-radial text-slate-100 h-screen flex overflow-hidden" x-data="callCenterApp()">
 
     <!-- BARRA LATERAL -->
-    <aside class="w-full md:w-80 bg-[#030712]/80 border-r border-[#c5a466]/15 flex flex-col justify-between p-6 shrink-0 backdrop-blur-md">
+    <aside class="w-80 bg-[#030712]/80 border-r border-[#c5a466]/15 flex flex-col justify-between p-6 shrink-0 backdrop-blur-md">
         <div>
             <!-- Branding -->
-            <div class="flex flex-col items-center text-center mb-8">
-                <div class="relative mb-3">
+            <div class="flex flex-col items-center text-center mb-6">
+                <div class="relative mb-2">
                     <div class="absolute inset-0 blur-2xl bg-[#c5a466]/20 rounded-full"></div>
-                    <!-- Si tienes el archivo de imagen, usa logo.png -->
-                    <img src="logo.png" alt="Monte Sinaí" class="h-16 relative z-10 mx-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                    <div class="hidden w-16 h-16 rounded-full border border-[#c5a466]/40 items-center justify-center gold-text font-display text-2xl font-bold relative z-10 bg-[#060b1a]">
-                        MS
+                    <div class="w-16 h-16 rounded-full border border-[#c5a466]/40 flex items-center justify-center gold-text font-display text-2xl font-bold relative z-10 bg-[#060b1a] shadow-lg">
+                        <span class="text-xl">✟</span>
                     </div>
                 </div>
-                <h1 class="font-display text-2xl gold-text tracking-wide font-semibold">Monte Sinaí</h1>
-                <p class="text-xs text-slate-400 tracking-wider uppercase mt-1">Atención Inmediata</p>
+                <h1 class="font-display text-2xl gold-text tracking-wide font-semibold mt-2">Monte Sinaí</h1>
+                <p class="text-[10px] text-slate-400 tracking-widest uppercase">Funeraria - San Luis Río Colorado</p>
             </div>
 
-            <!-- Estatus del Operador -->
-            <div class="glass p-4 rounded-xl mb-6">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs text-slate-400">Estado del Agente</span>
-                    <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        En Línea
-                    </span>
+            <!-- Panel de Estado / Simulación -->
+            <div class="glass p-4 rounded-xl mb-6 text-center space-y-3">
+                <div class="flex items-center justify-center gap-2 text-xs text-slate-400 uppercase tracking-wider">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Estado de Línea
                 </div>
-                <p class="text-sm font-medium text-slate-200">Operador: <span class="gold-text">Atención 24/7</span></p>
-                <p class="text-xs text-slate-400 mt-1">Llamadas atendidas hoy: <strong class="text-slate-200" x-text="logs.length">0</strong></p>
+                <p class="font-mono text-2xl gold-text font-bold" x-text="formatTime(timer)">00:00</p>
+                <p class="text-xs text-slate-400" x-text="timerActive ? 'Llamada en Curso' : 'Línea Disponible'"></p>
+                
+                <button @click="toggleTimer" class="w-full gold-btn text-slate-950 font-semibold py-2 rounded-lg text-xs shadow-md transition-all flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                    <span x-text="timerActive ? 'Finalizar Llamada' : 'Simular Llamada Entrante'"></span>
+                </button>
             </div>
 
-            <!-- Resumen Rápido de Directivas -->
-            <div class="space-y-3">
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Protocolo de Atención</p>
-                <div class="text-xs text-slate-300 space-y-2 border-l-2 border-[#c5a466]/40 pl-3 py-1">
-                    <p>• Mantener un tono sereno, empático y respetuoso.</p>
-                    <p>• Confirmar la ubicación exacta del servicio.</p>
-                    <p>• Priorizar casos de atención inmediata para pronta asignación.</p>
-                </div>
-            </div>
+            <!-- Navegación de Vistas -->
+            <nav class="space-y-2">
+                <button @click="activeTab = 'ingesta'" :class="{'bg-[#c5a466]/15 text-slate-100 border-[#c5a466]/40': activeTab === 'ingesta', 'text-slate-400 hover:bg-slate-800/40': activeTab !== 'ingesta'}" class="w-full text-left px-4 py-3 rounded-lg border border-transparent text-xs font-medium flex items-center gap-3 transition-colors">
+                    <svg class="w-4 h-4 gold-text" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Ingesta de Servicio
+                </button>
+
+                <button @click="activeTab = 'folios'" :class="{'bg-[#c5a466]/15 text-slate-100 border-[#c5a466]/40': activeTab === 'folios', 'text-slate-400 hover:bg-slate-800/40': activeTab !== 'folios'}" class="w-full text-left px-4 py-3 rounded-lg border border-transparent text-xs font-medium flex items-center gap-3 transition-colors">
+                    <svg class="w-4 h-4 gold-text" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    Folios Registrados (<span x-text="servicios.length">0</span>)
+                </button>
+            </nav>
         </div>
 
-        <div class="pt-6 border-t border-slate-800 text-xs text-slate-500 text-center">
-            &copy; Monte Sinaí — Sistema de Gestión Comercial y Atención
+        <div class="text-[10px] text-slate-500 text-center border-t border-slate-800/80 pt-4">
+            Funeraria Monte Sinaí &copy; 2026
         </div>
     </aside>
 
-    <!-- CONTENIDO PRINCIPAL -->
-    <main class="flex-1 flex flex-col p-6 md:p-10 overflow-y-auto space-y-8">
+    <!-- ÁREA PRINCIPAL -->
+    <main class="flex-1 overflow-y-auto p-8">
         
-        <!-- ENCABEZADO Y TEMPORIZADOR -->
-        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-6">
-            <div>
-                <h2 class="font-display text-3xl gold-text font-semibold">Registro de Llamada en Curso</h2>
-                <p class="text-sm text-slate-400">Captura la información de la llamada entrante para coordinar el seguimiento oportuno.</p>
-            </div>
-            
-            <div class="glass px-5 py-3 rounded-xl flex items-center gap-4">
-                <div class="text-right">
-                    <p class="text-xs text-slate-400 uppercase tracking-wider">Duración Llamada</p>
-                    <p class="text-xl font-mono gold-text font-bold" x-text="formatTime(timer)">00:00</p>
+        <!-- VISTA 1: INGESTA DE SERVICIO -->
+        <section x-show="activeTab === 'ingesta'" class="space-y-6">
+            <header class="border-b border-slate-800 pb-4">
+                <h2 class="font-display text-3xl gold-text font-semibold">Ingesta de Nuevo Servicio</h2>
+                <p class="text-xs text-slate-400 mt-1">Captura de llamadas de urgencia y registro automático en Google Sheets y Telegram.</p>
+            </header>
+
+            <form @submit.prevent="registrarNuevoServicio" class="glass p-6 rounded-2xl space-y-6">
+                <div class="divider">
+                    <span class="gold-text font-display text-base">Datos del Solicitante y Fallecido</span>
                 </div>
-                <button @click="toggleTimer" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
-                    <svg x-show="!timerActive" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <svg x-show="timerActive" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </button>
-            </div>
-        </header>
 
-        <!-- FORMULARIO DE CAPTURA -->
-        <form @submit.prevent="saveCallLog" class="glass p-6 md:p-8 rounded-2xl space-y-6">
-            
-            <div class="divider">
-                <span class="gold-text font-display text-lg">Información del Solicitante</span>
-            </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1.5 font-medium">Nombre del Fallecido *</label>
+                        <input type="text" x-model="nuevoForm.fallecido" required placeholder="Nombre completo" class="w-full bg-[#060b1a]/80 border border-slate-700/80 rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1.5 font-medium">Nombre del Solicitante *</label>
+                        <input type="text" x-model="nuevoForm.solicitante" required placeholder="Familiar o responsable" class="w-full bg-[#060b1a]/80 border border-slate-700/80 rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1.5 font-medium">Teléfono de Contacto *</label>
+                        <input type="tel" x-model="nuevoForm.telefono" required placeholder="(653) 000-0000" class="w-full bg-[#060b1a]/80 border border-slate-700/80 rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none">
+                    </div>
+                </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1.5 font-medium">Ubicación / Dirección del Servicio *</label>
+                        <input type="text" x-model="nuevoForm.ubicacion" required placeholder="Domicilio, hospital o clínica" class="w-full bg-[#060b1a]/80 border border-slate-700/80 rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1.5 font-medium">Capilla Asignada</label>
+                        <select x-model="nuevoForm.capilla" class="w-full bg-[#060b1a]/80 border border-slate-700/80 rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none">
+                            <option value="Capilla Monte Sinaí (Principal)">Capilla Monte Sinaí (Principal)</option>
+                            <option value="Capilla B">Capilla B</option>
+                            <option value="Servicio Domiciliario">Servicio Domiciliario</option>
+                            <option value="Traslado Foráneo">Traslado Foráneo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="divider">
+                    <span class="gold-text font-display text-base">Estatus de Documentación Inicial</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#060b1a]/40 p-4 rounded-xl border border-slate-800">
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" x-model="nuevoForm.docs.certificado" class="rounded border-slate-700 text-[#c5a466] focus:ring-0">
+                        Certificado Defunción
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" x-model="nuevoForm.docs.ineFallecido" class="rounded border-slate-700 text-[#c5a466] focus:ring-0">
+                        INE Fallecido
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" x-model="nuevoForm.docs.ineTitular" class="rounded border-slate-700 text-[#c5a466] focus:ring-0">
+                        INE Titular/Familiar
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" x-model="nuevoForm.docs.permisosSalubridad" class="rounded border-slate-700 text-[#c5a466] focus:ring-0">
+                        Permiso Salubridad
+                    </label>
+                </div>
+
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-2">Nombre del Solicitante *</label>
-                    <input type="text" x-model="form.nombre" required placeholder="Ej. María Rodríguez" class="w-full bg-[#060b1a]/80 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors">
+                    <label class="block text-xs text-slate-300 mb-1.5 font-medium">Observaciones de la Ingesta</label>
+                    <textarea x-model="nuevoForm.notas" rows="3" placeholder="Detalles de carroza, horario estimado de recolección, observaciones de causa o requerimientos particulares..." class="w-full bg-[#060b1a]/80 border border-slate-700/80 rounded-lg p-3 text-xs text-slate-100 outline-none resize-none"></textarea>
                 </div>
 
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="submit" class="gold-btn text-slate-950 font-semibold px-6 py-2.5 rounded-lg text-xs shadow-md transition-all flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                        Registrar e Iniciar Folio
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- VISTA 2: FOLIOS REGISTRADOS / BÚSQUEDA -->
+        <section x-show="activeTab === 'folios'" class="space-y-6">
+            <header class="flex justify-between items-center border-b border-slate-800 pb-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-2">Teléfono de Contacto *</label>
-                    <input type="tel" x-model="form.telefono" required placeholder="(653) 000-0000" class="w-full bg-[#060b1a]/80 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors">
+                    <h2 class="font-display text-3xl gold-text font-semibold">Folios Activos</h2>
+                    <p class="text-xs text-slate-400 mt-1">Control de expedientes, estatus de proceso y control de documentos.</p>
                 </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-2">Tipo de Servicio Solicitado</label>
-                    <select x-model="form.tipoServicio" class="w-full bg-[#060b1a]/80 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 outline-none transition-colors">
-                        <option value="Servicio Inmediato">Atención de Urgencia / Inmediato</option>
-                        <option value="Previsión Futura">Plan de Previsión Futura</option>
-                        <option value="Informes Generales">Consulta de Información / Cotización</option>
-                        <option value="Seguimiento a Cliente">Seguimiento a Trámite Existente</option>
-                    </select>
+                
+                <div class="w-72">
+                    <input type="text" x-model="searchQuery" placeholder="Buscar por Folio o Fallecido..." class="w-full bg-[#060b1a]/80 border border-slate-700/80 rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none">
                 </div>
-            </div>
+            </header>
 
-            <div class="divider">
-                <span class="gold-text font-display text-lg">Detalles y Ubicación</span>
-            </div>
+            <div class="grid grid-cols-1 gap-4">
+                <template x-for="(serv, idx) in serviciosFiltrados" :key="idx">
+                    <div class="glass p-5 rounded-xl space-y-4">
+                        <div class="flex justify-between items-start border-b border-slate-800/60 pb-3">
+                            <div>
+                                <span class="text-[10px] font-mono gold-text tracking-wider uppercase" x-text="serv.folio"></span>
+                                <h3 class="text-base font-semibold text-slate-100" x-text="serv.fallecido"></h3>
+                                <p class="text-xs text-slate-400">Solicitante: <span x-text="serv.solicitante"></span> | Tel: <span x-text="serv.telefono"></span></p>
+                            </div>
+                            
+                            <div class="flex items-center gap-3">
+                                <select x-model="serv.estatus" @change="actualizarEnSheet(serv)" class="bg-[#060b1a] border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200 outline-none">
+                                    <option value="Pendiente">Pendiente</option>
+                                    <option value="En Preparación">En Preparación</option>
+                                    <option value="En Capilla">En Capilla</option>
+                                    <option value="Concluido">Concluido</option>
+                                </select>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-2">Ubicación / Dirección</label>
-                    <input type="text" x-model="form.ubicacion" placeholder="Ej. Calle A #123, Col. Centro" class="w-full bg-[#060b1a]/80 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors">
-                </div>
+                                <span class="text-[10px] font-mono text-slate-500" x-text="serv.fechaRegistro"></span>
+                            </div>
+                        </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-2">Estatus de Prioridad</label>
-                    <select x-model="form.prioridad" class="w-full bg-[#060b1a]/80 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 outline-none transition-colors">
-                        <option value="Alta">Alta (Atención Inmediata)</option>
-                        <option value="Media">Media (Agendar Visita / Cotización)</option>
-                        <option value="Baja">Baja (Solo Información)</option>
-                    </select>
-                </div>
-            </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300">
+                            <div>
+                                <p><strong>Ubicación:</strong> <span x-text="serv.ubicacion"></span></p>
+                                <p class="mt-1"><strong>Capilla:</strong> <span x-text="serv.capilla"></span></p>
+                            </div>
+                            <div>
+                                <p class="font-medium text-slate-400 mb-1">Checklist Documental:</p>
+                                <div class="flex flex-wrap gap-3">
+                                    <label class="flex items-center gap-1.5 text-[11px]"><input type="checkbox" x-model="serv.docs.certificado" @change="actualizarEnSheet(serv)" class="rounded border-slate-700 text-[#c5a466]"> Certificado</label>
+                                    <label class="flex items-center gap-1.5 text-[11px]"><input type="checkbox" x-model="serv.docs.ineFallecido" @change="actualizarEnSheet(serv)" class="rounded border-slate-700 text-[#c5a466]"> INE Fallecido</label>
+                                    <label class="flex items-center gap-1.5 text-[11px]"><input type="checkbox" x-model="serv.docs.ineTitular" @change="actualizarEnSheet(serv)" class="rounded border-slate-700 text-[#c5a466]"> INE Titular</label>
+                                    <label class="flex items-center gap-1.5 text-[11px]"><input type="checkbox" x-model="serv.docs.permisosSalubridad" @change="actualizarEnSheet(serv)" class="rounded border-slate-700 text-[#c5a466]"> Salubridad</label>
+                                </div>
+                            </div>
+                        </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-2">Notas y Observaciones de la Llamada</label>
-                <textarea x-model="form.notas" rows="4" placeholder="Describa brevemente lo solicitado por el cliente, requerimientos especiales o acuerdos tomados durante la llamada..." class="w-full bg-[#060b1a]/80 border border-slate-700 rounded-lg p-4 text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors resize-none"></textarea>
-            </div>
+                        <div class="pt-2 border-t border-slate-800/40 flex justify-between items-center text-xs">
+                            <p class="text-slate-400 italic max-w-2xl truncate" x-text="serv.notas || 'Sin observaciones adicionales'"></p>
+                            <button @click="notificarTelegram(serv)" class="text-[#c5a466] hover:underline text-[11px] flex items-center gap-1">
+                                💬 Enviar Alerta Telegram
+                            </button>
+                        </div>
+                    </div>
+                </template>
 
-            <div class="flex justify-end gap-4 pt-4 border-t border-slate-800">
-                <button type="button" @click="resetForm" class="px-5 py-2.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-300 text-sm font-medium transition-colors">
-                    Limpiar Campos
-                </button>
-                <button type="submit" class="gold-btn text-slate-950 font-semibold px-6 py-2.5 rounded-lg text-sm shadow-lg shadow-[#c5a466]/10 transition-all flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    Finalizar y Registrar Llamada
-                </button>
-            </div>
-        </form>
-
-        <!-- BITÁCORA DE LLAMADAS REGISTRADAS -->
-        <section class="space-y-4">
-            <h3 class="font-display text-2xl gold-text font-semibold">Registro de Llamadas Recientes</h3>
-            
-            <div class="glass rounded-xl overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-300">
-                        <thead class="bg-[#030712]/60 text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                            <tr>
-                                <th class="p-4">Hora</th>
-                                <th class="p-4">Solicitante</th>
-                                <th class="p-4">Contacto</th>
-                                <th class="p-4">Tipo de Servicio</th>
-                                <th class="p-4">Prioridad</th>
-                                <th class="p-4">Duración</th>
-                                <th class="p-4">Notas</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-800/60">
-                            <template x-for="(log, index) in logs" :key="index">
-                                <tr class="hover:bg-slate-800/30 transition-colors">
-                                    <td class="p-4 font-mono text-slate-400" x-text="log.hora"></td>
-                                    <td class="p-4 font-semibold text-slate-100" x-text="log.nombre"></td>
-                                    <td class="p-4 text-slate-300" x-text="log.telefono"></td>
-                                    <td class="p-4">
-                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-medium bg-slate-800 border border-slate-700 text-slate-200" x-text="log.tipoServicio"></span>
-                                    </td>
-                                    <td class="p-4">
-                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold"
-                                              :class="{
-                                                  'bg-red-500/10 text-red-400 border border-red-500/20': log.prioridad === 'Alta',
-                                                  'bg-amber-500/10 text-amber-400 border border-amber-500/20': log.prioridad === 'Media',
-                                                  'bg-blue-500/10 text-blue-400 border border-blue-500/20': log.prioridad === 'Baja'
-                                              }"
-                                              x-text="log.prioridad"></span>
-                                    </td>
-                                    <td class="p-4 font-mono gold-text" x-text="log.duracion"></td>
-                                    <td class="p-4 text-slate-400 max-w-xs truncate" :title="log.notas" x-text="log.notas || '-'"></td>
-                                </tr>
-                            </template>
-                            <tr x-show="logs.length === 0">
-                                <td colspan="7" class="p-8 text-center text-slate-500">
-                                    No hay llamadas registradas en esta sesión.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div x-show="serviciosFiltrados.length === 0" class="glass p-8 text-center text-slate-500 text-xs">
+                    No hay expedientes o folios registrados que coincidan con la búsqueda.
                 </div>
             </div>
         </section>
+
     </main>
 
-    <!-- LOGICA DE ALPINEJS -->
+    <!-- SCRIPTS Y LÓGICA DE APPS SCRIPT INTEGRADA -->
     <script>
+        // CONFIGURACIÓN DE TU BACKEND DE APPS SCRIPT / TELEGRAM
+        const APPS_SCRIPT_WEB_APP_URL = 'TU_DEPLOYMENT_URL_DE_GOOGLE_APPS_SCRIPT_AQUI';
+
         function callCenterApp() {
             return {
+                activeTab: 'ingesta',
                 timer: 0,
                 timerActive: false,
                 interval: null,
-                form: {
-                    nombre: '',
+                searchQuery: '',
+                
+                nuevoForm: {
+                    fallecido: '',
+                    solicitante: '',
                     telefono: '',
-                    tipoServicio: 'Servicio Inmediato',
                     ubicacion: '',
-                    prioridad: 'Alta',
+                    capilla: 'Capilla Monte Sinaí (Principal)',
+                    docs: {
+                        certificado: false,
+                        ineFallecido: false,
+                        ineTitular: false,
+                        permisosSalubridad: false
+                    },
                     notas: ''
                 },
-                logs: [],
-                init() {
-                    this.startTimer();
+
+                servicios: [
+                    {
+                        rowIndex: 2,
+                        folio: 'MS-2026-001',
+                        fechaRegistro: '10/09/2026 09:15',
+                        fallecido: 'Ejemplo Registro Guardado',
+                        solicitante: 'Familia Ejemplo',
+                        telefono: '(653) 123-4567',
+                        ubicacion: 'San Luis Río Colorado, Sonora',
+                        estatus: 'Pendiente',
+                        capilla: 'Capilla Monte Sinaí (Principal)',
+                        docs: { certificado: true, ineFallecido: true, ineTitular: false, permisosSalubridad: false },
+                        notas: 'Expediente inicial cargado en demostración.'
+                    }
+                ],
+
+                get serviciosFiltrados() {
+                    if (!this.searchQuery.trim()) return this.servicios;
+                    const q = this.searchQuery.toLowerCase();
+                    return this.servicios.filter(s => 
+                        s.folio.toLowerCase().includes(q) || 
+                        s.fallecido.toLowerCase().includes(q)
+                    );
                 },
-                startTimer() {
-                    this.timerActive = true;
-                    this.interval = setInterval(() => {
-                        this.timer++;
-                    }, 1000);
-                },
+
                 toggleTimer() {
                     if (this.timerActive) {
                         clearInterval(this.interval);
                         this.timerActive = false;
                     } else {
-                        this.startTimer();
+                        this.timerActive = true;
+                        this.interval = setInterval(() => { this.timer++; }, 1000);
                     }
                 },
-                resetTimer() {
-                    clearInterval(this.interval);
-                    this.timer = 0;
-                    this.startTimer();
-                },
-                formatTime(seconds) {
-                    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-                    const secs = (seconds % 60).toString().padStart(2, '0');
-                    return `${mins}:${secs}`;
-                },
-                saveCallLog() {
-                    const horaActual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    
-                    this.logs.unshift({
-                        hora: horaActual,
-                        nombre: this.form.nombre,
-                        telefono: this.form.telefono,
-                        tipoServicio: this.form.tipoServicio,
-                        ubicacion: this.form.ubicacion,
-                        prioridad: this.form.prioridad,
-                        notas: this.form.notas,
-                        duracion: this.formatTime(this.timer)
-                    });
 
-                    this.resetForm();
-                    this.resetTimer();
+                formatTime(sec) {
+                    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+                    const s = (sec % 60).toString().padStart(2, '0');
+                    return `${m}:${s}`;
                 },
-                resetForm() {
-                    this.form = {
-                        nombre: '',
-                        telefono: '',
-                        tipoServicio: 'Servicio Inmediato',
-                        ubicacion: '',
-                        prioridad: 'Alta',
+
+                registrarNuevoServicio() {
+                    const nuevoFolio = 'MS-2026-' + String(this.servicios.length + 1).padStart(3, '0');
+                    const fecha = new Date().toLocaleString();
+
+                    const nuevoServicio = {
+                        rowIndex: this.servicios.length + 2,
+                        folio: nuevoFolio,
+                        fechaRegistro: fecha,
+                        fallecido: this.nuevoForm.fallecido,
+                        solicitante: this.nuevoForm.solicitante,
+                        telefono: this.nuevoForm.telefono,
+                        ubicacion: this.nuevoForm.ubicacion,
+                        estatus: 'Pendiente',
+                        capilla: this.nuevoForm.capilla,
+                        docs: { ...this.nuevoForm.docs },
+                        notas: this.nuevoForm.notas
+                    };
+
+                    this.servicios.unshift(nuevoServicio);
+                    this.actualizarEnSheet(nuevoServicio);
+                    
+                    // Resetear formulario
+                    this.nuevoForm = {
+                        fallecido: '', solicitante: '', telefono: '', ubicacion: '',
+                        capilla: 'Capilla Monte Sinaí (Principal)',
+                        docs: { certificado: false, ineFallecido: false, ineTitular: false, permisosSalubridad: false },
                         notas: ''
                     };
+
+                    if (this.timerActive) this.toggleTimer();
+                    this.timer = 0;
+                    this.activeTab = 'folios';
+                },
+
+                actualizarEnSheet(servicio) {
+                    if (!APPS_SCRIPT_WEB_APP_URL || APPS_SCRIPT_WEB_APP_URL.includes('TU_DEPLOYMENT')) {
+                        console.log('Enviando a Google Sheets:', servicio);
+                        return;
+                    }
+
+                    fetch(APPS_SCRIPT_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'actualizar', servicio: servicio })
+                    }).then(() => {
+                        console.log('Sincronizado con Google Sheets');
+                    }).catch(err => console.error('Error al sincronizar:', err));
+                },
+
+                notificarTelegram(servicio) {
+                    this.actualizarEnSheet(servicio);
+                    alert(`Alerta de actualización enviada a Telegram para el Folio ${servicio.folio}`);
                 }
             }
         }

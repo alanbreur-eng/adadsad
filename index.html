@@ -391,5 +391,122 @@
             }
         }
     </script>
+    const SHEET_NAME = 'Servicios'; // Nombre de tu pestaña en Google Sheets
+const TELEGRAM_TOKEN = 'TU_TELEGRAM_BOT_TOKEN_AQUI'; // Opcional para enviar alertas
+const TELEGRAM_CHAT_ID = 'TU_CHAT_ID_AQUI';
+
+function doGet(e) {
+  const action = e.parameter.action;
+  const query = e.parameter.query;
+  
+  if (action === 'buscar' && query) {
+    const resultado = buscarServicioPorFolioONombre(query);
+    return ContentService.createTextOutput(JSON.stringify(resultado))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({ success: false, message: 'Acción no válida' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    
+    if (data.action === 'actualizar') {
+      const res = actualizarServicioEnSheet(data.servicio);
+      return ContentService.createTextOutput(JSON.stringify(res))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// BUSCAR EN LA HOJA DE CÁLCULO
+function buscarServicioPorFolioONombre(query) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const searchLower = query.toString().toLowerCase().trim();
+  
+  // Omitimos la fila de encabezados (i = 1)
+  for (let i = 1; i < data.length; i++) {
+    const folio = data[i][0].toString().toLowerCase();
+    const fallecido = data[i][2].toString().toLowerCase();
+    
+    if (folio.includes(searchLower) || fallecido.includes(searchLower)) {
+      return {
+        success: true,
+        servicio: {
+          rowIndex: i + 1, // Guardamos la fila para actualización rápida
+          folio: data[i][0],
+          fechaRegistro: data[i][1],
+          fallecido: data[i][2],
+          solicitante: data[i][3],
+          telefono: data[i][4],
+          ubicacion: data[i][5],
+          estatus: data[i][6] || 'Pendiente',
+          capilla: data[i][7] || 'Capilla Monte Sinaí (Principal)',
+          docs: {
+            certificado: data[i][8] === true || data[i][8] === 'SI',
+            ineFallecido: data[i][9] === true || data[i][9] === 'SI',
+            ineTitular: data[i][10] === true || data[i][10] === 'SI',
+            permisoSalubridad: data[i][11] === true || data[i][11] === 'SI'
+          },
+          notas: data[i][12] || ''
+        }
+      };
+    }
+  }
+  
+  return { success: false, message: 'Servicio no encontrado' };
+}
+
+// ACTUALIZAR REGISTRO EXISTENTE
+function actualizarServicioEnSheet(servicio) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const rowIndex = servicio.rowIndex;
+  
+  if (!rowIndex) return { success: false, message: 'Fila inválida' };
+
+  // Actualizamos las columnas de control (G a M)
+  sheet.getRange(rowIndex, 7).setValue(servicio.estatus);
+  sheet.getRange(rowIndex, 8).setValue(servicio.capilla);
+  sheet.getRange(rowIndex, 9).setValue(servicio.docs.certificado);
+  sheet.getRange(rowIndex, 10).setValue(servicio.docs.ineFallecido);
+  sheet.getRange(rowIndex, 11).setValue(servicio.docs.ineTitular);
+  sheet.getRange(rowIndex, 12).setValue(servicio.docs.permisoSalubridad);
+  sheet.getRange(rowIndex, 13).setValue(servicio.notas);
+
+  // Opcional: Notificar actualización importante a Telegram
+  notificarCambioTelegram(servicio);
+
+  return { success: true };
+}
+
+// ENVIAR NOTIFICACIÓN A TELEGRAM AL ACTUALIZAR
+function notificarCambioTelegram(s) {
+  if (!TELEGRAM_TOKEN || TELEGRAM_TOKEN === 'TU_TELEGRAM_BOT_TOKEN_AQUI') return;
+
+  const mensaje = `📌 *ACTUALIZACIÓN DE SERVICIO*\n\n` +
+    `*Folio:* ${s.folio}\n` +
+    `*Fallecido:* ${s.fallecido}\n` +
+    `*Estatus Actual:* ${s.estatus}\n` +
+    `*Capilla:* ${s.capilla}\n` +
+    `*Notas:* ${s.notas || 'Sin notas adicionales'}`;
+
+  const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+  
+  UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text: mensaje,
+      parse_mode: 'Markdown'
+    })
+  });
+}
 </body>
 </html>
